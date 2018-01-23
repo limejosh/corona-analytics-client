@@ -1,0 +1,15 @@
+__pycache__/
+*.cache
+*.pyc
+
+*.sw*
+.idea
+
+.coverage
+.coveragerc
+htmlcov
+result.xml
+pip.conf
+
+dist
+corona_analytics_client.egg-info
