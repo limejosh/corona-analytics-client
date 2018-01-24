@@ -13,3 +13,4 @@ pip.conf
 
 dist
 corona_analytics_client.egg-info
+docs/_build
