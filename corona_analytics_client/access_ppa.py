@@ -120,7 +120,7 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
         """
         Get all mpans in a dict with the full mpan the key and the value a dict of
         technology, site name, meter type and kw
-        :param String meter_type:
+        :param str meter_type:
         :return: dict with MPAN as key
         """
 

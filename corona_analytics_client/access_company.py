@@ -36,9 +36,9 @@ class Company(CompanyParamsMixin):
     So far company name, id and billing details are found given on of the first
     two fields.
 
-    :param corona_client
-    :param name
-    :param company_id
+    :param corona_client:
+    :param str name:
+    :param company_id:
     """
     def __init__(self, corona_client, name=None, company_id=None):
 
