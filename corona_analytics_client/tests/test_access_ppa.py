@@ -44,7 +44,6 @@ class TestCoronaPPAParamsMixin:
         'remove_cancelled_contracts': 'true',
     }
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("boolean, result_expected", [
         (True, 'true'),
         (False, 'false'),
@@ -54,7 +53,6 @@ class TestCoronaPPAParamsMixin:
         result = corona_mixin._boolean_handler(boolean)
         assert result == result_expected
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "full_mpan, start_date, end_date, contracted_ppa, "
         "remove_cancelled_contracts, params_expected", [
@@ -147,7 +145,6 @@ class TestAllPPAMPANs:
         resp.json.return_value = data
         return resp
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled", [
             (test_resp, test_url_quotes, CoronaClient('dev'), datetime.date(2015, 1, 1),
@@ -169,7 +166,6 @@ class TestAllPPAMPANs:
                          'remove_cancelled_contracts': 'true',
                          })
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled", [
             (test_resp_start_only, test_url_quotes, CoronaClient('dev'),
@@ -190,7 +186,6 @@ class TestAllPPAMPANs:
             'remove_cancelled_contracts': 'true',
              })
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled,"
         " result_expected", [
@@ -213,7 +208,6 @@ class TestAllPPAMPANs:
             })
         assert result == result_expected
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled,"
         " result_expected", [
@@ -293,7 +287,6 @@ class TestPPAContract:
         resp.json.return_value = data
         return resp
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, url, corona_client, quote_id, values_expected", [
         (test_resp, test_url_products, CoronaClient('dev'), 1, test_values),
         (test_resp_2, test_url_products, CoronaClient('dev'), 1000, test_values_2),
@@ -314,7 +307,6 @@ class TestPPAContract:
             assert contract.contract_types[price] == values_expected[
                 'contract_types'][price]
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, url, corona_client, quote_id", [
         (None, test_url_products, CoronaClient('dev'), 1),
     ])
@@ -330,7 +322,6 @@ class TestPPAContract:
         assert not contract.pass_throughs
         assert not contract.contract_types
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("str_dates, result_expected", [
         (('2016-01-01', '2016-10-31'),
          (datetime.date(2016, 1, 1), datetime.date(2016, 10, 31)),),
@@ -348,7 +339,6 @@ class TestPPAContract:
         assert ppa_contract.details['contract_start_date'] == result_expected[0]
         assert ppa_contract.details['contract_end_date'] == result_expected[1]
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "details, spill_start_expected, spill_end_expected", [
             ({}, None, None),
@@ -421,7 +411,6 @@ class TestMPAN:
         resp.json.return_value = data
         return resp
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("test_contracts, contract_expected", [
         (test_contract_details,
          {'quote_id': 101, 'spill_start': None, 'spill_end': None}),
@@ -441,13 +430,11 @@ class TestMPAN:
         mpan.set_live_ppa_contract()
         assert mpan.live_ppa_contract.details == contract_expected
 
-    @pytest.mark.fast_test
     def test_set_ppa_contracts_none(self, mpan):
         mpan.ppa_contracts = []
         mpan.set_live_ppa_contract()
         assert not mpan.live_ppa_contract
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, url, corona_client, site_id", [
         (test_sites, test_url_sites, CoronaClient('dev'), 12),
     ])
@@ -460,7 +447,6 @@ class TestMPAN:
         mpan.get_site_info()
         mock_get.assert_called_once_with(url + str(site_id))
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, site_resp, corona_client, site_id", [
         (test_billing_details, test_sites, CoronaClient('dev'), 12),
     ])
@@ -475,7 +461,6 @@ class TestMPAN:
             'http://corona.limejump.dev:8202/api/billing-info/?company=' +
             str(site_id))
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, site_resp", [
         (None, None,),
     ])
@@ -486,7 +471,6 @@ class TestMPAN:
         mpan.set_billing_details(site_resp)
         assert not mpan.billing_details
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("site_resp, result_expected", [
         (test_sites, 'test_name'),
         ({}, None),
@@ -495,7 +479,6 @@ class TestMPAN:
         mpan.set_site_name(site_resp)
         assert mpan.site_name == result_expected
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("site_resp, result_expected", [
         (test_sites, 12),
         ({}, None),
@@ -504,10 +487,9 @@ class TestMPAN:
         mpan.set_company_id(site_resp)
         assert mpan.company_id == result_expected
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("details, result_expected", [
-        ({'technology': 'AD'}, 'export'),
-        ({'technology': 'Import'}, 'import'),
+        ({'technology': 'AD', 'meter_type': 'E'}, 'export'),
+        ({'technology': 'Import', 'meter_type': 'I'}, 'import'),
         ({}, None),
     ])
     def test_set_meter_type(self, mpan, details, result_expected):
@@ -515,13 +497,6 @@ class TestMPAN:
         mpan.live_ppa_contract.details = details
         mpan.set_meter_type()
         assert mpan.meter_type == result_expected
-
-    def test_get_start_live_end_live(self):
-        mpan = '008456982100041340401'
-        corona_client = CoronaClient('prod')
-        my_mpan = MPAN(corona_client, mpan)
-        my_mpan.set_all_info()
-        print("")
 
 
 if __name__ == "__main__":

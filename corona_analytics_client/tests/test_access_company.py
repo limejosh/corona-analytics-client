@@ -12,7 +12,6 @@ class TestCompanyParamsMixin:
     def company_params(self):
         return CompanyParamsMixin()
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("name, company_id, result_expected", [
         (None, 10, {}),
         ('Awesome Company Limited', None, {'name': 'Awesome Company Limited'}),
@@ -46,7 +45,6 @@ class TestCompany:
 
     test_site_url = 'http://corona.limejump.dev:8202/api/sites/'
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, name, resp", [
         (10, None, test_companies_url,),
     ])
@@ -60,7 +58,6 @@ class TestCompany:
         company.get_companies_response()
         mock_get.assert_called_once_with(resp+str(company_id))
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, name, resp", [
         (None, 'Awesome AD Limited', test_companies_url,),
     ])
@@ -75,7 +72,6 @@ class TestCompany:
         mock_get.assert_called_once_with(
             resp, params={'name': 'Awesome AD Limited'})
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, name, resp", [
         (None, None, None,),
     ])
@@ -89,7 +85,6 @@ class TestCompany:
         result = company.get_companies_response()
         assert not result
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, resp", [
         (10, test_billing_url,),
     ])
@@ -101,7 +96,6 @@ class TestCompany:
         company.get_billing_response()
         mock_get.assert_called_once_with(resp+str(company_id))
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, resp", [
         (None, None,),
     ])
@@ -114,7 +108,6 @@ class TestCompany:
         result = company.get_billing_response()
         assert not result
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, resp", [
         (10, test_site_url,),
     ])
@@ -126,7 +119,6 @@ class TestCompany:
         company.get_site_response()
         mock_get.assert_called_once_with(resp+str(company_id))
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("company_id, resp", [
         (None, None,),
     ])
@@ -138,7 +130,6 @@ class TestCompany:
         result = company.get_site_response()
         assert not result
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize("resp, billing_details_expected", [
         ([{'billing_name': 'Horrible Hydro PLC'}],
          {'billing_name': 'Horrible Hydro PLC'},),
@@ -151,7 +142,6 @@ class TestCompany:
         company.set_billing_details()
         assert company.billing_details == billing_details_expected
 
-    @pytest.mark.fast_test
     @pytest.mark.parametrize(
         "company_resp, company_id, name, company_id_expected, name_expected", [
             ([], None, None, None, None),

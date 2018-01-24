@@ -9,6 +9,9 @@ from geopy.geocoders import Nominatim
 
 
 class CoronaPPAParamsMixin(object):
+    """
+    Corona PPA Params Mixin
+    """
     full_mpan = None
     start_date = None
     end_date = None
@@ -74,12 +77,10 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
     self.params['roc_factor_gt'] = 0.1
     self.params['meter_type'] = 'export'
 
-    :param start_date: start date of query period, datetime.date()
-    :param end_date: end date of query period, datetime.date()
-    :param contracted_ppa: whether quote/ contract is signed, boolean
-    :param remove_cancelled_contracts: if you want to remove cancelled
-    contracts from results, boolean. If False then cancelled contracts are
-    returned.
+    :param Date start_date: start date of query period
+    :param Date end_date: end date of query period
+    :param boolean contracted_ppa: whether quote/ contract is signed
+    :param boolean remove_cancelled_contracts: if you want to remove cancelled contracts from results. If False then cancelled contracts are returned.
     """
     def __init__(self, corona_client, start_date, end_date, contracted_ppa=True,
                  remove_cancelled_contracts=True):
@@ -91,6 +92,9 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
         self.params = {}
 
     def get_corona_response(self):
+        """
+        Build request for ppa quotes
+        """
         url = self.corona_client.get_url('ppa-quotes')
         url = url.format('')
         return requests.get(url, params=self.params).json()
@@ -112,58 +116,12 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
         resp = self.get_corona_response()
         return {quote['quote_id'] for quote in resp}
 
-    # def get_all_mpans_by_meter_type(self, meter_type=None, get_quote_ids=False, get_live_dates=False):
-    #     """
-    #     Get a dict of mpans with a dict of their details, so it's
-    #     {mpan 1: {full_mpan: full_mpan, 'technology': tech, 'site_name': site_name,
-    #                 'meter_type': meter_type, 'kW': 'capacity_kw', 'contracts': contracts object
-    #     :param meter_type:
-    #     :param get_quote_ids: if True, add 'quote_ids': quote ids to dict
-    #     :param get_live_dates: if True, add start_live_date: start_live_date, end_live_date: end_live_date to dict
-    #     :return:
-    #     """
-    #
-    #     mpan_list_long = self.get_all_ppa_mpans()
-    #     dict_out = {}
-    #     for mpan_long in mpan_list_long:
-    #         if mpan_long != '':
-    #             m = MPAN(self.corona_client, mpan_long, start_date=self.start_date, end_date=self.end_date)
-    #             m.set_all_info()
-    #             if m.ppa_contracts[0].details['load_profile'].lower() == "super peak":
-    #                 tech = "Peak"
-    #             else:
-    #                 tech = m.ppa_contracts[0].details['technology']
-    #
-    #             info = {'full_mpan': m.full_mpan,
-    #                     'technology': tech,
-    #                     'site_name': m.site_name,
-    #                     'meter_type': m.meter_type,
-    #                     'kW': m.ppa_contracts[0].details['capacity_kw'],
-    #                     'contracts': m.ppa_contracts}
-    #
-    #             if get_quote_ids:
-    #                 quote_ids = []
-    #                 for ppa_contract in m.ppa_contracts:
-    #                     quote_ids.append(ppa_contract.details['quote_id'])
-    #                 info['quote_ids'] = quote_ids
-    #             if get_live_dates:
-    #                 m.get_start_live_end_live(m.ppa_contracts)
-    #                 info['start_live_date'] = m.start_live_date
-    #                 info['end_live_date'] = m.end_live_date
-    #
-    #             if meter_type is None:
-    #                 dict_out[m.mpan] = info
-    #             else:
-    #                 if m.meter_type.lower() == meter_type.lower():
-    #                     dict_out[m.mpan] = info
-    #     return dict_out
-
     def get_all_full_mpans_by_meter_type(self, meter_type=None):
         """
         Get all mpans in a dict with the full mpan the key and the value a dict of
         technology, site name, meter type and kw
-        :param meter_type:
-        :return:
+        :param str meter_type:
+        :return: dict with MPAN as key
         """
 
         mpan_list_long = self.get_all_ppa_mpans()
@@ -185,6 +143,9 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
 
 
 class PPAContract(object):
+    """
+    PPA Contract Class
+    """
     def __init__(self, corona_client, **kwargs):
 
         self.corona_client = corona_client
@@ -199,6 +160,10 @@ class PPAContract(object):
         self.set_spill_dates()
 
     def set_dates(self):
+        """
+        Function to reformat contract date information
+        :return:
+        """
         if 'contract_start_date' in self.details:
             if isinstance(self.details['contract_start_date'], str):
                 start_date = datetime.datetime.strptime(
@@ -211,6 +176,9 @@ class PPAContract(object):
                 self.details['contract_end_date'] = end_date.date()
 
     def get_quote_info(self):
+        """
+        Return request for quote id in contract details
+        """
         if 'quote_id' in self.details:
             params = {
                 'quote_id': self.details['quote_id'],
@@ -246,17 +214,17 @@ class PPAContract(object):
 
 
 class MPAN(CoronaPPAParamsMixin):
+    """
+    MPAN class
+    :param string full_mpan: 21 digit MPAN
+    :param Date start_date: start date of query period
+    :param Date end_date: end date of query period
+    :param boolean contracted_ppa: whether quote/ contract is signed
+    :param boolean remove_cancelled_contracts: if you want to remove cancelled contracts. If False then cancelled contracts are returned.
+    """
+
     def __init__(self, corona_client, full_mpan, start_date=None, end_date=None,
                  contracted_ppa=True, remove_cancelled_contracts=True):
-        """
-        :param full_mpan: 21 digit MPAN, str
-        :param start_date: start date of query period, datetime.date()
-        :param end_date: end date of query period, datetime.date()
-        :param contracted_ppa: whether quote/ contract is signed, boolean
-        :param remove_cancelled_contracts: if you want to remove cancelled
-        contracts, boolean. If False then cancelled contracts are returned.
-        """
-
         self.corona_client = corona_client
         self.full_mpan = full_mpan
         self.mpan = full_mpan[-13:]
@@ -344,6 +312,10 @@ class MPAN(CoronaPPAParamsMixin):
                 self.site_postcode = site_resp['addresses'][0]['postcode']
 
     def set_lat_lon(self):
+        """
+        Get lat/lon from site postcode
+        :return:
+        """
         if self.site_postcode is not None:
             location = Nominatim().geocode(self.site_postcode)
             self.site_latitude = location.latitude
@@ -391,7 +363,6 @@ class MPAN(CoronaPPAParamsMixin):
         """
         Get total start and end date of all contracts
         :param contracts:
-        :return:
         """
 
         start_dates = []
@@ -413,7 +384,14 @@ class MPAN(CoronaPPAParamsMixin):
     def get_continuous_start_end_live(self, contracts):
         """
         Similar to get_start_live_end_live, but gives start and end of current live period, so accounts for
-        time where we have lost the customer
+        time where we have lost the customer, so if there is a gap between contracts the returned dates will stop there
+
+        Example:
+        contract 1: 01/01/2017 - 31/03/2017
+        contract 2: 01/05/2017 - 31/08/2017
+        contract 3 (current live contract): 01/09/2017 - 31/12/2017
+        so it will give 01/05/2017 as start_live_date and 31/12/2017 as end_live_date because of the gap between
+        contract 1 and 2
         :param contracts:
         :return:
         """
