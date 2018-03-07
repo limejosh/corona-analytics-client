@@ -18,7 +18,7 @@ def find_version(fname):
     return version
 
 
-__version__ = find_version('{{ cookiecutter.project_slug }}/__init__.py')
+__version__ = find_version('corona_analytics_client/__init__.py')
 
 
 
