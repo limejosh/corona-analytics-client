@@ -1,8 +1,6 @@
 import requests
 import os
 
-from lj_clients.clients import CoronaClient
-
 
 class CompanyParamsMixin(object):
     """
@@ -56,7 +54,7 @@ class Company(CompanyParamsMixin):
         Depending on what information is given in init, query with id or name.
         :return: corona response
         """
-        url = self.corona_client.get_url('companies')
+        url = self.corona_client._get_url('companies')
         if self.company_id:
             url = os.path.join(url, str(self.company_id))
             return requests.get(url).json()
@@ -64,13 +62,13 @@ class Company(CompanyParamsMixin):
             return requests.get(url, params=self.params).json()[0]
 
     def get_billing_response(self):
-        url = self.corona_client.get_url('billing-info')
+        url = self.corona_client._get_url('billing-info')
         query_string = "?company={}".format(str(self.company_id))
         billing_url = os.path.join(url, query_string)
         return requests.get(billing_url).json()
 
     def get_site_response(self):
-        url = self.corona_client.get_url('sites')
+        url = self.corona_client._get_url('sites')
         site_url = os.path.join(url, str(self.company_id))
         return requests.get(site_url).json()
 

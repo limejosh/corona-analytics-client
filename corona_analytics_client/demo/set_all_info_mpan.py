@@ -3,7 +3,7 @@ import datetime
 from lj_clients.clients import CoronaClient
 
 from corona_analytics_client.access_ppa import MPAN
-from corona_analytics_client.demo.settings import corona_config
+from corona_analytics_client.settings import corona_config
 
 
 def set_all_info_mpan():
