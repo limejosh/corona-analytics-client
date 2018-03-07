@@ -26,7 +26,7 @@ setup(
     name='corona_analytics_client',
     version=__version__,
     description='corona_analytics_client.',
-    install_requires=['lj_clients==0.5.0'],
+    install_requires=['lj_clients==1.0.3', 'requests==2.4.3', 'geopy==1.11.0'],
     author='Limejump',
     author_email='tech@limejump.com',
     packages=find_packages(),
