@@ -1,5 +1,5 @@
-#lj_clients
-#requests
-#pytest
+lj-clients==1.0.3
+requests
 geopy
+
 

@@ -95,7 +95,7 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
         """
         Build request for ppa quotes
         """
-        url = self.corona_client.get_url('ppa-quotes')
+        url = self.corona_client._get_url('ppa/quotes')
         url = url.format('')
         return requests.get(url, params=self.params).json()
 
@@ -180,11 +180,8 @@ class PPAContract(object):
         Return request for quote id in contract details
         """
         if 'quote_id' in self.details:
-            params = {
-                'quote_id': self.details['quote_id'],
-            }
-            url = self.corona_client.get_url('ppa-product-quote')
-            return requests.get(url, params=params).json()
+            quote_id = self.details['quote_id']
+            return self.corona_client.get_base_request('ppa/product-quotes', quote_id=quote_id).json()
 
     def set_quote_info(self):
         quote = self.get_quote_info()
@@ -263,7 +260,7 @@ class MPAN(CoronaPPAParamsMixin):
         """
         if self.live_ppa_contract:
             site_id = self.live_ppa_contract.details['site']
-            site_url = self.corona_client.get_url('sites')
+            site_url = self.corona_client._get_url('sites')
             site_url = os.path.join(site_url, str(site_id))
             self.site_info = requests.get(site_url).json()
             return self.site_info
@@ -278,7 +275,7 @@ class MPAN(CoronaPPAParamsMixin):
         """
         if site_resp and 'company' in site_resp:
             company_id = site_resp['company']
-            billing_url = self.corona_client.get_url('billing-info')
+            billing_url = self.corona_client._get_url('billing-info')
             query_string = "?company={}".format(str(company_id))
             billing_url = os.path.join(billing_url, query_string)
             resp = requests.get(billing_url).json()
@@ -291,7 +288,7 @@ class MPAN(CoronaPPAParamsMixin):
         DC/DA
         :return:
         """
-        registration_url = self.corona_client.get_url('registrations')
+        registration_url = self.corona_client._get_url('ppa/registrations')
         query_string = "?mpan={}".format(self.full_mpan)
         registration_url = os.path.join(registration_url, query_string)
         resp = requests.get(registration_url).json()
@@ -330,7 +327,7 @@ class MPAN(CoronaPPAParamsMixin):
                 self.meter_type = 'import'
 
     def set_ppa_contracts(self):
-        url = self.corona_client.get_url('ppa-quotes')
+        url = self.corona_client._get_url('ppa/quotes')
         url = url.format('')
         resp = requests.get(url, params=self.params).json()
         self.ppa_contracts = [PPAContract(self.corona_client, **contract) for contract in resp]

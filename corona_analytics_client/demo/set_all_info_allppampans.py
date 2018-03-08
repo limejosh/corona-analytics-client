@@ -1,8 +1,10 @@
 import datetime
 
+from lj_clients.clients import CoronaClient
+
 from corona_analytics_client.access_ppa import AllPPAMPANs
 from corona_analytics_client.access_ppa import MPAN
-from lj_clients.clients import CoronaClient
+from corona_analytics_client.settings import corona_config
 
 
 def set_all_info_allppampans():
@@ -53,7 +55,9 @@ def set_all_info_allppampans():
     end = datetime.date(2017, 11, 30)
     contracted_ppa = True
     remove_cancelled_contracts = False
-    corona_client = CoronaClient('prod', version=1.0)
+    corona_client = CoronaClient(base_url=corona_config['host'],
+                                 headers=corona_config['headers'],
+                                 version=1.0)
 
     all_mpans = AllPPAMPANs(
         corona_client, start, end, contracted_ppa, remove_cancelled_contracts)

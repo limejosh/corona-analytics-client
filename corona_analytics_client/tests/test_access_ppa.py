@@ -1,9 +1,11 @@
 import datetime
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
 from corona_analytics_client.access_ppa import (PPAContract, MPAN, CoronaPPAParamsMixin, AllPPAMPANs)
+from corona_analytics_client.settings import corona_config
 from lj_clients.clients import CoronaClient
 
 
@@ -136,23 +138,48 @@ class TestAllPPAMPANs:
     test_url_quotes = 'http://corona.limejump.dev:8202/api/ppa/quotes/'
 
     @pytest.fixture
-    def all_mpans(self, start_date, end_date):
-        corona_client = CoronaClient('dev')
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def corona_client(self, mock_get):
+        mock_get.return_value = self.create_response({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/',
+            'ppa/quotes': 'http://corona.limejump.dev:8202/api/ppa/quotes/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
+        return corona_client
+
+    @pytest.fixture
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def all_mpans(self, mock_get, start_date, end_date):
+        mock_get.return_value = self.create_response({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/',
+            'ppa/quotes': 'http://corona.limejump.dev:8202/api/ppa/quotes/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
+
         return AllPPAMPANs(corona_client, start_date, end_date)
 
-    def create_response(self, data, status=200):
+    @staticmethod
+    def create_response(data, status=200):
         resp = mock.Mock(status=status)
         resp.json.return_value = data
         return resp
 
     @pytest.mark.parametrize(
-        "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled", [
-            (test_resp, test_url_quotes, CoronaClient('dev'), datetime.date(2015, 1, 1),
+        "resp, url, start_date, end_date, contracted_ppa, remove_cancelled", [
+            (test_resp, test_url_quotes, datetime.date(2015, 1, 1),
              datetime.date(2015, 1, 31), True, True),
         ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_get_corona_response_both(
-            self, mock_get, resp, url, corona_client, start_date, end_date, contracted_ppa,
+            self, mock_get, corona_client, resp, url, start_date, end_date, contracted_ppa,
             remove_cancelled):
         mock_get.return_value = self.create_response(resp)
         all_ppas = AllPPAMPANs(
@@ -167,13 +194,13 @@ class TestAllPPAMPANs:
                          })
 
     @pytest.mark.parametrize(
-        "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled", [
-            (test_resp_start_only, test_url_quotes, CoronaClient('dev'),
+        "resp, url, start_date, end_date, contracted_ppa, remove_cancelled", [
+            (test_resp_start_only, test_url_quotes,
              datetime.date(2015, 1, 1), None, True, True),
         ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_get_corona_response_one(
-            self, mock_get, resp, url, corona_client, start_date, end_date, contracted_ppa,
+            self, mock_get, corona_client, resp, url, start_date, end_date, contracted_ppa,
             remove_cancelled):
         mock_get.return_value = self.create_response(resp)
         all_ppas = AllPPAMPANs(
@@ -187,15 +214,15 @@ class TestAllPPAMPANs:
              })
 
     @pytest.mark.parametrize(
-        "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled,"
+        "resp, url, start_date, end_date, contracted_ppa, remove_cancelled,"
         " result_expected", [
-            (test_resp, test_url_quotes, CoronaClient('dev'),
+            (test_resp, test_url_quotes,
              datetime.date(2015, 1, 1), datetime.date(2015, 1, 31), True,
              False, {'008450062012345678910', '008450062012345678911'},),
         ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_get_all_mpans(
-            self, mock_get, resp, url, corona_client, start_date, end_date, contracted_ppa,
+            self, mock_get, corona_client, resp, url, start_date, end_date, contracted_ppa,
             remove_cancelled, result_expected):
         mock_get.return_value = self.create_response(resp)
         all_ppas = AllPPAMPANs(
@@ -209,15 +236,15 @@ class TestAllPPAMPANs:
         assert result == result_expected
 
     @pytest.mark.parametrize(
-        "resp, url, corona_client, start_date, end_date, contracted_ppa, remove_cancelled,"
+        "resp, url, start_date, end_date, contracted_ppa, remove_cancelled,"
         " result_expected", [
-            (test_resp_quote_id, test_url_quotes, CoronaClient('dev'),
+            (test_resp_quote_id, test_url_quotes,
              datetime.date(2015, 1, 1), datetime.date(2015, 1, 31), True,
              False, {1001, 1009},),
         ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_get_all_quotes(
-            self, mock_get, resp, url, corona_client, start_date, end_date, contracted_ppa,
+            self, mock_get, corona_client, resp, url, start_date, end_date, contracted_ppa,
             remove_cancelled, result_expected):
         mock_get.return_value = self.create_response(resp)
         all_ppas = AllPPAMPANs(
@@ -234,9 +261,24 @@ class TestAllPPAMPANs:
 class TestPPAContract:
 
     @pytest.fixture
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def corona_client(self, mock_get):
+        mock_get.return_value = self.create_response({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/',
+            'ppa/quotes': 'http://corona.limejump.dev:8202/api/ppa/quotes/',
+            'ppa/product-quotes': 'http://corona.limejump.dev:8202/api/ppa/product-quotes/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
+        return corona_client
+
+    @pytest.fixture
     def ppa_contract(self, **kwargs):
-        corona_client = CoronaClient('dev')
-        return PPAContract(corona_client, **kwargs)
+
+        return PPAContract(self.corona_client, **kwargs)
 
     test_resp = [
         {
@@ -287,13 +329,15 @@ class TestPPAContract:
         resp.json.return_value = data
         return resp
 
-    @pytest.mark.parametrize("resp, url, corona_client, quote_id, values_expected", [
-        (test_resp, test_url_products, CoronaClient('dev'), 1, test_values),
-        (test_resp_2, test_url_products, CoronaClient('dev'), 1000, test_values_2),
+    @pytest.mark.parametrize("resp, url, quote_id, values_expected", [
+        (test_resp, test_url_products, 1, test_values),
+        (test_resp_2, test_url_products, 1000, test_values_2),
     ])
-    @mock.patch('corona_analytics_client.access_ppa.requests.get')
+    @mock.patch('lj_clients.clients.CoronaClient._get_url')
+    @mock.patch('lj_clients.clients.base.BaseClient.get')
     def test_set_quote_info(
-            self, mock_get, resp, url, corona_client, quote_id, values_expected):
+            self, mock_get, mock_url, corona_client, resp, url, quote_id, values_expected):
+        mock_url.return_value = url
         mock_get.return_value = self.create_response(resp)
         contract = PPAContract(corona_client, quote_id=quote_id)
         mock_get.assert_called_once_with(
@@ -307,11 +351,13 @@ class TestPPAContract:
             assert contract.contract_types[price] == values_expected[
                 'contract_types'][price]
 
-    @pytest.mark.parametrize("resp, url, corona_client, quote_id", [
-        (None, test_url_products, CoronaClient('dev'), 1),
+    @pytest.mark.parametrize("resp, url, quote_id", [
+        (None, test_url_products, 1),
     ])
-    @mock.patch('corona_analytics_client.access_ppa.requests.get')
-    def test_set_quote_info_none(self, mock_get, resp, url, corona_client, quote_id):
+    @mock.patch('lj_clients.clients.CoronaClient._get_url')
+    @mock.patch('lj_clients.clients.base.BaseClient.get')
+    def test_set_quote_info_none(self, mock_get, mock_url, corona_client, resp, url, quote_id):
+        mock_url.return_value = url
         mock_get.return_value = self.create_response(resp)
         contract = PPAContract(corona_client, quote_id=quote_id)
         mock_get.assert_called_once_with(
@@ -362,16 +408,41 @@ class TestPPAContract:
 class TestMPAN:
 
     @pytest.fixture
-    def ppa_contract(self, **kwargs):
-        corona_client = CoronaClient('dev')
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def corona_client(self, mock_get):
+        mock_get.return_value = self.create_response({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/',
+            'ppa/quotes': 'http://corona.limejump.dev:8202/api/ppa/quotes/',
+            'ppa/product-quotes': 'http://corona.limejump.dev:8202/api/ppa/product-quotes/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
+        return corona_client
+
+    @pytest.fixture
+    def ppa_contract(self, corona_client, **kwargs):
+
         return PPAContract(corona_client, **kwargs)
 
     @pytest.fixture
-    def mpan(self):
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def mpan(self, mock_get):
         full_mpan = ""
         start_date = None
         end_date = None
-        corona_client = CoronaClient('dev')
+        mock_get.return_value = self.create_response({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/',
+            'ppa/quotes': 'http://corona.limejump.dev:8202/api/ppa/quotes/',
+            'ppa/product-quotes': 'http://corona.limejump.dev:8202/api/ppa/product-quotes/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
         return MPAN(corona_client, full_mpan, start_date, end_date)
 
     test_contract_details = [
@@ -388,6 +459,13 @@ class TestMPAN:
     test_contract_details3 = [
         {'quote_id': 100, 'spill_period': 0, 'spill_start': None, 'spill_end': None},
         {'quote_id': 101, 'spill_period': 0, 'spill_start': None, 'spill_end': None},
+    ]
+
+    test_resp = [
+        {
+            'value': 50.0, 'price_type': 'power',
+            'pass_through_percent': 95.5, 'product_quote_type': 'Flexible'
+        },
     ]
 
     test_url_quotes = 'http://corona.limejump.dev:8202/api/ppa/quotes/'
@@ -411,22 +489,27 @@ class TestMPAN:
         resp.json.return_value = data
         return resp
 
-    @pytest.mark.parametrize("test_contracts, contract_expected", [
-        (test_contract_details,
+    @pytest.mark.parametrize("url, resp, test_contracts, contract_expected", [
+        (test_url_quotes, test_resp, test_contract_details,
          {'quote_id': 101, 'spill_start': None, 'spill_end': None}),
-        (test_contract_details2,
+        (test_url_quotes, test_resp, test_contract_details2,
          {'quote_id': 1001, 'spill_start': None, 'spill_end': None}),
-        (test_contract_details3,
+        (test_url_quotes, test_resp, test_contract_details3,
          {'quote_id': 101, 'spill_period': 0, 'spill_start': None,
           'spill_end': None}),
     ])
+    @mock.patch('lj_clients.clients.CoronaClient._get_url')
+    @mock.patch('lj_clients.clients.base.BaseClient.get')
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_set_ppa_contracts(
-            self, mock_get, mpan, test_contracts, contract_expected):
+            self, mock_url, mock_get, mock_get2, mpan, corona_client, url, resp,
+            test_contracts, contract_expected):
         mpan.ppa_contracts = []
         for contract_details in test_contracts:
-            mock_get.json.return_value = contract_details
-            mpan.ppa_contracts.append(self.ppa_contract(**contract_details))
+            mock_url.return_value = url
+            mock_get.return_value = self.create_response(resp)
+            mock_get2.json.return_value = contract_details
+            mpan.ppa_contracts.append(self.ppa_contract(corona_client, **contract_details))
         mpan.set_live_ppa_contract()
         assert mpan.live_ppa_contract.details == contract_expected
 
@@ -435,24 +518,24 @@ class TestMPAN:
         mpan.set_live_ppa_contract()
         assert not mpan.live_ppa_contract
 
-    @pytest.mark.parametrize("resp, url, corona_client, site_id", [
-        (test_sites, test_url_sites, CoronaClient('dev'), 12),
+    @pytest.mark.parametrize("resp, url, site_id", [
+        (test_sites, test_url_sites, 12),
     ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_get_site_info(
-            self, mock_get, mpan, resp, url, corona_client, site_id):
+            self, mock_get, corona_client, mpan, resp, url, site_id):
         mpan.live_ppa_contract = PPAContract(corona_client)
         mpan.live_ppa_contract.details['site'] = site_id
         mock_get.return_value = self.create_response(resp)
         mpan.get_site_info()
         mock_get.assert_called_once_with(url + str(site_id))
 
-    @pytest.mark.parametrize("resp, site_resp, corona_client, site_id", [
-        (test_billing_details, test_sites, CoronaClient('dev'), 12),
+    @pytest.mark.parametrize("resp, site_resp, site_id", [
+        (test_billing_details, test_sites, 12),
     ])
     @mock.patch('corona_analytics_client.access_ppa.requests.get')
     def test_set_billing_details(
-            self, mock_get, mpan, resp, site_resp, corona_client, site_id):
+            self, mock_get, corona_client, mpan, resp, site_resp, site_id):
         mpan.live_ppa_contract = PPAContract(corona_client)
         mpan.live_ppa_contract.details['site'] = site_id
         mock_get.return_value = self.create_response(resp)
@@ -492,8 +575,8 @@ class TestMPAN:
         ({'technology': 'Import', 'meter_type': 'I'}, 'import'),
         ({}, None),
     ])
-    def test_set_meter_type(self, mpan, details, result_expected):
-        mpan.live_ppa_contract = self.ppa_contract()
+    def test_set_meter_type(self, mpan, corona_client, details, result_expected):
+        mpan.live_ppa_contract = self.ppa_contract(corona_client)
         mpan.live_ppa_contract.details = details
         mpan.set_meter_type()
         assert mpan.meter_type == result_expected

@@ -1,8 +1,10 @@
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
 from corona_analytics_client.access_company import (CompanyParamsMixin, Company)
+from corona_analytics_client.settings import corona_config
 from lj_clients.clients import CoronaClient
 
 
@@ -28,9 +30,23 @@ class TestCompanyParamsMixin:
 
 class TestCompany:
 
+    test_companies_url = 'http://corona.limejump.dev:8202/api/companies/'
+
+    test_billing_url = 'http://corona.limejump.dev:8202/api/billing-info/'
+
+    test_site_url = 'http://corona.limejump.dev:8202/api/sites/'
+
     @pytest.fixture
-    def company(self):
-        corona_client = CoronaClient('dev')
+    @patch('lj_clients.clients.base.BaseClient.get')
+    def company(self, mock_get):
+        mock_get.return_value = self.create_reponse({
+            'companies': 'http://corona.limejump.dev:8202/api/companies/',
+            'billing-info': 'http://corona.limejump.dev:8202/api/billing-info/',
+            'sites': 'http://corona.limejump.dev:8202/api/sites/'
+        })
+        corona_client = CoronaClient(base_url=corona_config['host'],
+                                     headers=corona_config['headers'],
+                                     version=1.0)
         return Company(corona_client)
 
     @staticmethod
@@ -39,24 +55,20 @@ class TestCompany:
         resp.json.return_value = data
         return resp
 
-    test_companies_url = 'http://corona.limejump.dev:8202/api/companies/'
-
-    test_billing_url = 'http://corona.limejump.dev:8202/api/billing-info/?company='
-
-    test_site_url = 'http://corona.limejump.dev:8202/api/sites/'
-
     @pytest.mark.parametrize("company_id, name, resp", [
-        (10, None, test_companies_url,),
+        (10, None, test_companies_url),
     ])
     @mock.patch('corona_analytics_client.access_company.requests.get')
+    @mock.patch('corona_analytics_client.access_company.requests.get')
     def test_get_companies_response_company_id(
-            self, mock_get, company, company_id, name, resp):
+            self, mock_url, mock_get, company, company_id, name, resp):
+        mock_url.return_value = resp
         mock_get.return_value = self.create_reponse(resp+str(company_id))
         company.company_id = company_id
         company.name = name
         company._add_params()
         company.get_companies_response()
-        mock_get.assert_called_once_with(resp+str(company_id))
+        mock_get.assert_called_with(resp+str(company_id))
 
     @pytest.mark.parametrize("company_id, name, resp", [
         (None, 'Awesome AD Limited', test_companies_url,),
@@ -90,11 +102,11 @@ class TestCompany:
     ])
     @mock.patch('corona_analytics_client.access_company.requests.get')
     def test_get_billing_response(self, mock_get, company, company_id, resp):
-        mock_get.return_value = self.create_reponse(resp+str(company_id))
+        mock_get.return_value = self.create_reponse(resp)
         company.company_id = company_id
         company._add_params()
         company.get_billing_response()
-        mock_get.assert_called_once_with(resp+str(company_id))
+        mock_get.assert_called_once_with(resp+"?company="+str(company_id))
 
     @pytest.mark.parametrize("company_id, resp", [
         (None, None,),

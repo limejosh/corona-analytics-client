@@ -1,7 +1,9 @@
 import datetime
 
-from corona_analytics_client.access_ppa import MPAN
 from lj_clients.clients import CoronaClient
+
+from corona_analytics_client.access_ppa import MPAN
+from corona_analytics_client.settings import corona_config
 
 
 def set_all_info_mpan():
@@ -61,7 +63,9 @@ def set_all_info_mpan():
     mpan = '008457871300060312681'
     mpan = '008457971050001299895'
     mpan = '008450052000054816061'
-    corona_client = CoronaClient('prod')
+    corona_client = CoronaClient(base_url=corona_config['host'],
+                                 headers=corona_config['headers'],
+                                 version=1.0)
 
     m = MPAN(corona_client, mpan, start, end, contracted_ppa, remove_cancelled_contracts)
     m.set_all_info()

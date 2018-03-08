@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import re
 
 
 def find_version(fname):
@@ -18,7 +19,7 @@ def find_version(fname):
     return version
 
 
-__version__ = find_version('{{ cookiecutter.project_slug }}/__init__.py')
+__version__ = find_version('corona_analytics_client/__init__.py')
 
 
 
@@ -26,7 +27,7 @@ setup(
     name='corona_analytics_client',
     version=__version__,
     description='corona_analytics_client.',
-    install_requires=['lj_clients==0.5.0'],
+    install_requires=['lj_clients==1.0.3', 'requests==2.4.3', 'geopy==1.11.0'],
     author='Limejump',
     author_email='tech@limejump.com',
     packages=find_packages(),
