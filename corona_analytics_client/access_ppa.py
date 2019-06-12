@@ -116,6 +116,18 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
         resp = self.get_corona_response()
         return {quote['quote_id'] for quote in resp}
 
+    def get_all_ppa_quote_ids_created_after(self, created_time):
+        self._add_params()
+        self.params['created_time_gte'] = created_time
+        resp = self.get_corona_response()
+        return {quote['quote_id'] for quote in resp}
+
+    def get_all_ppa_mpans_created_after(self, created_time):
+        self._add_params()
+        self.params['created_time_gte'] = created_time
+        resp = self.get_corona_response()
+        return {quote['mpan'] for quote in resp}
+
     def get_all_full_mpans_by_meter_type(self, meter_type=None):
         """
         Get all mpans in a dict with the full mpan the key and the value a dict of
@@ -259,10 +271,13 @@ class MPAN(CoronaPPAParamsMixin):
         :return: site_resp
         """
         if self.live_ppa_contract:
-            site_id = self.live_ppa_contract.details['site']
-            site_url = self.corona_client._get_url('sites')
-            site_url = os.path.join(site_url, str(site_id))
-            self.site_info = requests.get(site_url).json()
+            if self.corona_client._version == '1.0':
+                site_id = self.live_ppa_contract.details['site']
+                site_url = self.corona_client._get_url('sites')
+                site_url = os.path.join(site_url, str(site_id))
+                self.site_info = requests.get(site_url).json()
+            else:
+                self.site_info = self.live_ppa_contract.details['site']
             return self.site_info
 
     def set_billing_details(self, site_resp):
@@ -304,9 +319,16 @@ class MPAN(CoronaPPAParamsMixin):
             self.company_id = site_resp['company']
 
     def set_site_postcode(self, site_resp):
-        if site_resp and 'addresses' in site_resp:
-            if len(site_resp['addresses']) and 'postcode' in site_resp['addresses'][0]:
-                self.site_postcode = site_resp['addresses'][0]['postcode']
+        if self.corona_client._version == '1.0':
+            if site_resp and 'addresses' in site_resp:
+                if len(site_resp['addresses']) and 'postcode' in site_resp['addresses'][0]:
+                    self.site_postcode = site_resp['addresses'][0]['postcode']
+        else:
+            if site_resp and 'address' in site_resp:
+                try:
+                    self.site_postcode = site_resp['address']['postcode']
+                except KeyError:
+                    pass
 
     def set_lat_lon(self):
         """
@@ -314,7 +336,7 @@ class MPAN(CoronaPPAParamsMixin):
         :return:
         """
         if self.site_postcode is not None:
-            location = Nominatim().geocode(self.site_postcode)
+            location = Nominatim().geocode({'postalcode': self.site_postcode, 'country': 'UK'})
             self.site_latitude = location.latitude
             self.site_longitude = location.longitude
 
