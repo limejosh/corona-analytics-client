@@ -1,5 +1,5 @@
-lj-clients==1.0.3
-requests
+lj-clients==1.3.3
+requests>=2.10
 geopy
 
 

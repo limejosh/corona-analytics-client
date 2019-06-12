@@ -65,7 +65,7 @@ def set_all_info_mpan():
     mpan = '008450052000054816061'
     corona_client = CoronaClient(base_url=corona_config['host'],
                                  headers=corona_config['headers'],
-                                 version=1.0)
+                                 version=2.0)
 
     m = MPAN(corona_client, mpan, start, end, contracted_ppa, remove_cancelled_contracts)
     m.set_all_info()

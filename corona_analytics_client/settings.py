@@ -6,7 +6,7 @@ CORONA_SUPER_TOKENS = {'local': 'w7818hISDW970y3ZWvZF3r7626Q4OYFM',
                        'prod': '207202O372yd32I49u9b52Ge4s143viv'}
 
 corona_config = {
-  'host': 'http://corona.limejump.{}:8202/'.format(LIMEJUMP_ENV),
+  'host': 'http://corona.limejump.{}:8202/api/'.format(LIMEJUMP_ENV),
   'headers': {"Authorization": CORONA_SUPER_TOKENS[LIMEJUMP_ENV]},
   'token': 'apisupertoken',
 }

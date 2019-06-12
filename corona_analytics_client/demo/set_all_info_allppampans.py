@@ -61,6 +61,9 @@ def set_all_info_allppampans():
 
     all_mpans = AllPPAMPANs(
         corona_client, start, end, contracted_ppa, remove_cancelled_contracts)
+    all_mpans.params['meter_type'] = 'export'
+    all_mpans.params['technology'] = 'Solar'
+    all_mpans.params['quote_type'] = 'Fixed'
     mpan_list = all_mpans.get_all_ppa_mpans()
     mpan_dict = {}
     for mpan in mpan_list:
