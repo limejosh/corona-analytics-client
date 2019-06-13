@@ -2,10 +2,6 @@ import requests
 import datetime
 import os
 from dateutil.relativedelta import relativedelta
-from geopy.geocoders import Nominatim
-
-# from access.access_quotation import AccessQuotation, QuoteDetail
-# from access.access_trade_capture import AccessMonthlyScalars
 
 
 class CoronaPPAParamsMixin(object):
@@ -102,10 +98,16 @@ class AllPPAMPANs(CoronaPPAParamsMixin):
     def get_all_ppa_mpans(self, quote_type=None):
         self._add_params()
         resp = self.get_corona_response()
-        if quote_type:
-            return {quote['mpan'] for quote in resp if quote['quote_type'] == quote_type}
+        if self.corona_client._version == '1.0':
+            if quote_type:
+                return {quote['mpan'] for quote in resp if quote['quote_type'] == quote_type}
+            else:
+                return {quote['mpan'] for quote in resp}
         else:
-            return {quote['mpan'] for quote in resp}
+            if quote_type:
+                return {quote['mpan']['long_value'] for quote in resp if quote['quote_type'] == quote_type}
+            else:
+                return {quote['mpan']['long_value'] for quote in resp}
 
     def get_all_ppa_mpans_with_no_params(self):
         resp = self.get_corona_response()
@@ -255,6 +257,7 @@ class MPAN(CoronaPPAParamsMixin):
         self.site_latitude = None
         self.site_longitude = None
         self.site_info = None
+        self.assets = []
 
         # For Corona querying
         self.params = {}
@@ -308,7 +311,10 @@ class MPAN(CoronaPPAParamsMixin):
         registration_url = os.path.join(registration_url, query_string)
         resp = requests.get(registration_url).json()
         if resp:
-            self.registration_details = resp[0]
+            if self.corona_client._version == 1.0:
+                self.registration_details = resp[0]
+            else:
+                self.registration_details = resp[-1]
 
     def set_site_name(self, site_resp):
         if site_resp and 'name' in site_resp:
@@ -330,20 +336,10 @@ class MPAN(CoronaPPAParamsMixin):
                 except KeyError:
                     pass
 
-    def set_lat_lon(self):
-        """
-        Get lat/lon from site postcode
-        :return:
-        """
-        if self.site_postcode is not None:
-            location = Nominatim().geocode({'postalcode': self.site_postcode, 'country': 'UK'})
-            self.site_latitude = location.latitude
-            self.site_longitude = location.longitude
-
     def set_meter_type(self):
-        if (self.live_ppa_contract and 'meter_type' in
-                self.live_ppa_contract.details):
-            if self.live_ppa_contract.details['meter_type'] == "E":
+        if (self.live_ppa_contract and 'mpan_type' in
+                self.live_ppa_contract.details['mpan']):
+            if self.live_ppa_contract.details['mpan']['mpan_type'] == "E":
                 self.meter_type = 'export'
             else:
                 self.meter_type = 'import'
@@ -440,6 +436,29 @@ class MPAN(CoronaPPAParamsMixin):
 
         return start, end
 
+    def set_assets(self, asset_id):
+        url = self.corona_client._get_url('assets')
+        url = url.format('')
+        resp = requests.get(url, params={'asset_id': asset_id}).json()
+        return resp[0]
+
+    def get_asset_info(
+        self,
+        site_resp: dict
+    ):
+        """
+        Use the information about the asset in the dict about the site
+        to query information about the asset, e.g. tech type and capacity
+
+        Args:
+            site_resp: dict returned by the quotes or sites endpoint
+        """
+        if site_resp.get('assets'):
+            for asset in site_resp['assets']:
+                # call asset endpoint to get information about the asset
+                asset_info = self.set_assets(asset['asset_id'])
+                self.assets.append(asset_info)
+
     def set_all_info(self):
         self._add_params()
         self.set_ppa_contracts()
@@ -448,8 +467,8 @@ class MPAN(CoronaPPAParamsMixin):
         self.set_site_name(site_resp)
         self.set_company_id(site_resp)
         self.set_site_postcode(site_resp)
-        # self.set_lat_lon()
         self.set_meter_type()
         self.set_billing_details(site_resp)
+        self.get_asset_info(site_resp)
         self.set_registration_details()
         self.get_continuous_start_end_live(self.ppa_contracts)
