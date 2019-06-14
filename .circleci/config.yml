@@ -20,12 +20,6 @@ jobs:
         command: |
           sed -i "1s|^|--index-url $PYPI_URL\n|" requirements.txt
           sed -i "1s|^|--index-url $PYPI_URL\n|" test_requirements.txt
-    - run:
-        name: Populate settings file with environment credentials.
-        command: |
-          sed -i "s|conwx_host|$conwx_host|g" settings/settings_base.py
-          sed -i "s|conwx_user|$conwx_user|g" settings/settings_base.py
-          sed -i "s|conwx_passwd|$conwx_passwd|g" settings/settings_base.py
     - restore_cache:
         keys:
         - v1-dependencies-{{ checksum "requirements.txt" }}
