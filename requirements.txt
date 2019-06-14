@@ -1,5 +1,6 @@
 lj-clients==1.4.5
 python-dateutil==2.6.0
 requests>=2.22.0
+nose
 
 
