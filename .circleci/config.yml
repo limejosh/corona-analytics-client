@@ -40,9 +40,15 @@ jobs:
         command: |
           . venv/bin/activate
           ./run_tests.sh
-    - store_artifacts:
-        path: test-reports
-        destination: test-reports
+    - run: 
+        name: generate package
+        command: | 
+          python setup.py sdist
+    - run: 
+        name: upload to s3 
+        command: |
+          aws s3 cp dist/. s3://releases.limejump/pipy/ --recursive 
+
 workflows:
   version: 2
   workflow:
