@@ -1,4 +1,4 @@
-LIMEJUMP_ENV = 'prod'
+LIMEJUMP_ENV = 'dev'
 
 CORONA_SUPER_TOKENS = {'local': 'w7818hISDW970y3ZWvZF3r7626Q4OYFM',
                        'dev': 'w7818hISDW970y3ZWvZF3r7626Q4OYFM',

@@ -472,3 +472,4 @@ class MPAN(CoronaPPAParamsMixin):
         self.get_asset_info(site_resp)
         self.set_registration_details()
         self.get_continuous_start_end_live(self.ppa_contracts)
+
