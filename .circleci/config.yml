@@ -48,7 +48,7 @@ jobs:
     - run: 
         name: upload to s3 
         command: |
-          aws s3 cp dist/. s3://releases.limejump/pipy/ --recursive 
+          aws s3 cp dist/. s3://releases.limejump/pypi/ --recursive 
 
 workflows:
   version: 2
